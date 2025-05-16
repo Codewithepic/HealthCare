@@ -1,0 +1,144 @@
+// Imports from Civic Auth libraries
+import { useUser } from '@civic/auth-web3/react';
+import { getCivicWallet, getGatewayTokenForUser, formatWalletAddress } from '@/lib/walletHelper';
+
+// Function to authenticate with Civic - this is a wrapper around the hook functionality
+export const signInWithCivic = async () => {
+  console.warn('signInWithCivic() is a utility wrapper. Using the useUser().signIn() hook from @civic/auth/react is preferred.');
+  // Applications should use the useUser hook instead for direct access
+  try {
+    // This would be implemented with the hook in an actual component
+    return { data: null, error: null };
+  } catch (error) {
+    console.error('Error in signInWithCivic:', error);
+    return { data: null, error };
+  }
+};
+
+// Function to sign out from Civic
+export const signOutFromCivic = async () => {
+  console.warn('signOutFromCivic() is a utility wrapper. Using the useUser().signOut() hook from @civic/auth/react is preferred.');
+  try {
+    // This would be implemented with the hook in an actual component
+    return { error: null };
+  } catch (error) {
+    console.error('Error in signOutFromCivic:', error);
+    return { error };
+  }
+};
+
+// Import necessary APIs from Civic Auth
+import { getWalletAddressFromUser } from '@civic/auth-web3/utils';
+import { getCivicWallet, getGatewayTokenForUser, formatWalletAddress } from '@/lib/walletHelper';
+
+// Get information about the embedded wallet
+export const getEmbeddedWalletInfo = async (user?: any) => {
+  console.warn('getEmbeddedWalletInfo() is a utility function to access wallet details.');
+  
+  try {
+    // If user object is provided, try to get the wallet address from it
+    if (user) {
+      let walletAddress = null;
+      
+      // First try to get the wallet using our helper function
+      try {
+        walletAddress = await getCivicWallet(user);
+        console.log('Successfully got wallet address using getCivicWallet:', walletAddress);
+      } catch (walletError) {
+        console.error('Error getting wallet with getCivicWallet:', walletError);
+      }
+      
+      // If that fails, try with getWalletAddressFromUser
+      if (!walletAddress) {
+        try {
+          walletAddress = await getWalletAddressFromUser(user);
+          console.log('Successfully extracted wallet address from user with getWalletAddressFromUser:', walletAddress);
+        } catch (extractError) {
+          console.error('Error extracting wallet address with getWalletAddressFromUser:', extractError);
+        }
+      }
+      
+      // Try gateway token as a last resort
+      if (!walletAddress) {
+        try {
+          const gatewayToken = await getGatewayTokenForUser(user);
+          if (gatewayToken && 'wallet' in gatewayToken) {
+            walletAddress = gatewayToken.wallet as string;
+            console.log('Got wallet address from gateway token:', walletAddress);
+          }
+        } catch (gatewayError) {
+          console.error('Error getting gateway token:', gatewayError);
+        }
+      }
+      
+      // Format and validate the wallet address
+      const formattedAddress = formatWalletAddress(walletAddress);
+      
+      if (formattedAddress) {
+        return { 
+          data: {
+            publicKey: formattedAddress,
+            network: 'devnet',
+            type: 'embedded',
+            provider: 'Civic',
+            createdAt: new Date().toISOString(),
+          }, 
+          error: null 
+        };
+      }
+    }
+    
+    // Fallback to mock data for development/demo purposes
+    if (import.meta.env.DEV) {
+      console.warn('Using fallback wallet address. In production, this should come from Civic Auth.');
+      return { 
+        data: {
+          publicKey: '5DAAnV9zFqyhRcjgMJiTzSxw3YkWW5BbNnGPZVmkyQhS',
+          network: 'devnet',
+          type: 'embedded',
+          provider: 'Civic',
+          createdAt: new Date().toISOString(),
+        }, 
+        error: null 
+      };
+    }
+    
+    return {
+      data: null,
+      error: 'Could not retrieve wallet information'
+    };
+  } catch (error) {
+    console.error('Error getting wallet info:', error);
+    return {
+      data: null,
+      error: 'Failed to get wallet information'
+    };
+  }
+};
+
+// Check the balance of the embedded wallet
+export const checkWalletBalance = async () => {
+  console.warn('checkWalletBalance() is a utility function to check wallet balance.');
+  
+  try {
+    // In a real implementation, this would use Solana Web3.js to check the actual balance
+    // For demo purposes, returning mock data
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+    
+    return { 
+      data: {
+        balance: 0.05,
+        currency: 'SOL',
+        usdValue: 3.75, // Assuming $75 per SOL
+        lastUpdated: new Date().toISOString(),
+      }, 
+      error: null 
+    };
+  } catch (error) {
+    console.error('Error checking wallet balance:', error);
+    return {
+      data: null,
+      error: 'Failed to check wallet balance'
+    };
+  }
+};
